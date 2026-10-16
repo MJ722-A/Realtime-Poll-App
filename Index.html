@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f4f7f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 480px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-top: 0;
+      margin-bottom: 24px;
+    }
+    .vote-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background-color: #4A90E2;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+    .btn:hover {
+      background-color: #357ABD;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn:disabled {
+      background-color: #BDC3C7;
+      cursor: not-allowed;
+    }
+    .result-section {
+      margin-top: 20px;
+    }
+    .bar-container {
+      margin-bottom: 18px;
+    }
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+    }
+    .bar-bg {
+      background-color: #eef2f5;
+      border-radius: 10px;
+      height: 22px;
+      overflow: hidden;
+      width: 100%;
+    }
+    .bar-fill {
+      height: 100%;
+      background-color: #4A90E2;
+      width: 0%;
+      border-radius: 10px;
+      transition: width 0.5s ease-in-out;
+    }
+    .bar-fill.optionB { background-color: #50E3C2; }
+    .bar-fill.optionC { background-color: #F5A623; }
+    
+    .status-msg {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      margin-top: 15px;
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>선호하는 안건에 투표하세요</h2>
+
+    <!-- 투표 버튼 영역 -->
+    <div class="vote-buttons">
+      <button class="btn" onclick="submitVote('optionA')">A안</button>
+      <button class="btn" onclick="submitVote('optionB')">B안</button>
+      <button class="btn" onclick="submitVote('optionC')">C안</button>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+    <!-- 결과 그래프 영역 -->
+    <div class="result-section">
+      <div class="bar-container">
+        <div class="bar-header">
+          <span>A안</span>
+          <span id="label-optionA">0표 (0%)</span>
+        </div>
+        <div class="bar-bg">
+          <div id="bar-optionA" class="bar-fill"></div>
+        </div>
+      </div>
+
+      <div class="bar-container">
+        <div class="bar-header">
+          <span>B안</span>
+          <span id="label-optionB">0표 (0%)</span>
+        </div>
+        <div class="bar-bg">
+          <div id="bar-optionB" class="bar-fill optionB"></div>
+        </div>
+      </div>
+
+      <div class="bar-container">
+        <div class="bar-header">
+          <span>C안</span>
+          <span id="label-optionC">0표 (0%)</span>
+        </div>
+        <div class="bar-bg">
+          <div id="bar-optionC" class="bar-fill optionC"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="status" class="status-msg">결과를 불러오는 중...</div>
+  </div>
+
+  <script>
+    // 페이지 로드 시 현황 조회
+    window.onload = function() {
+      fetchResults();
+    };
+
+    // 현재 결과 불러오기
+    function fetchResults() {
+      google.script.run
+        .withSuccessHandler(renderResults)
+        .withFailureHandler(handleError)
+        .getVoteResults();
+    }
+
+    // 투표 제출하기
+    function submitVote(optionKey) {
+      setButtonsDisabled(true);
+      document.getElementById('status').innerText = '투표를 반영하는 중...';
+
+      google.script.run
+        .withSuccessHandler(function(results) {
+          renderResults(results);
+          document.getElementById('status').innerText = '투표가 성공적으로 반영되었습니다!';
+          setButtonsDisabled(false);
+        })
+        .withFailureHandler(function(err) {
+          handleError(err);
+          setButtonsDisabled(false);
+        })
+        .voteOption(optionKey);
+    }
+
+    // 막대 차트 및 득표율 업데이트
+    function renderResults(data) {
+      const optionA = data.optionA || 0;
+      const optionB = data.optionB || 0;
+      const optionC = data.optionC || 0;
+      const total = optionA + optionB + optionC;
+
+      updateBar('optionA', optionA, total);
+      updateBar('optionB', optionB, total);
+      updateBar('optionC', optionC, total);
+
+      document.getElementById('status').innerText = `총 투표수: ${total}표`;
+    }
+
+    function updateBar(key, count, total) {
+      const percent = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+      document.getElementById(`bar-${key}`).style.width = `${percent}%`;
+      document.getElementById(`label-${key}`).innerText = `${count}표 (${percent}%)`;
+    }
+
+    function setButtonsDisabled(disabled) {
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(btn => btn.disabled = disabled);
+    }
+
+    function handleError(error) {
+      console.error(error);
+      document.getElementById('status').innerText = '오류 발생: ' + error.message;
+    }
+  </script>
+</body>
+</html>
