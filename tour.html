@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지역별 여행지 카드북</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>📍 지역별 여행지 카드북</h1>
+    
+    <!-- 지역 선택 드롭다운 -->
+    <div class="controls">
+      <label for="areaSelect">지역 선택: </label>
+      <select id="areaSelect">
+        <option value="">-- 지역을 선택하세요 --</option>
+        <option value="1">서울</option>
+        <option value="6">부산</option>
+        <option value="4">대구</option>
+        <option value="2">인천</option>
+        <option value="5">광주</option>
+        <option value="3">대전</option>
+        <option value="7">울산</option>
+        <option value="31">경기도</option>
+        <option value="32">강원도</option>
+        <option value="39">제주도</option>
+      </select>
+    </div>
+
+    <!-- 로딩 표시 -->
+    <div id="loading" class="loading hidden">데이터를 불러오는 중입니다...</div>
+
+    <!-- 카드북 목록 뷰 (초기에는 숨김 처리) -->
+    <div id="cardContainer" class="card-grid hidden"></div>
+  </div>
+
+  <!-- JavaScript 모듈 연결 -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
